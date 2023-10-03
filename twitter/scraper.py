@@ -37,6 +37,7 @@ class Scraper:
         self.out = Path(kwargs.get('out', 'data'))
         self.guest = False
         self.logger = self._init_logger(**kwargs)
+        self.proxy = kwargs.get('proxy', '')
         self.session = self._validate_session(email, username, password, session, **kwargs)
 
     def users(self, screen_names: list[str], **kwargs) -> list[dict]:
@@ -540,7 +541,8 @@ class Scraper:
         limits = Limits(max_connections=100, max_keepalive_connections=10)
         headers = self.session.headers if self.guest else get_headers(self.session)
         cookies = self.session.cookies
-        async with AsyncClient(limits=limits, headers=headers, cookies=cookies, timeout=20) as c:
+        proxy = self.proxy
+        async with AsyncClient(limits=limits, headers=headers, cookies=cookies, proxies=proxy, timeout=20) as c:
             tasks = (self._paginate(c, operation, **q, **kwargs) for q in queries)
             if self.pbar:
                 return await tqdm_asyncio.gather(*tasks, desc=operation[-1])
